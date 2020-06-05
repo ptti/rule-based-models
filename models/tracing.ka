@@ -1,0 +1,85 @@
+%var: beta   0.034   // probability of infection from contact
+%var: c      13      // contact rate, lower than normal
+%var: alpha  0.2     // progression from exposed to infectious
+%var: gamma  0.1429  // progression from infectious to removed
+%var: theta0 0.0714  // rate of testing in the general population
+%var: thetaI 1.0     // rate of testing of infectious population
+%var: theta  theta0 + thetaI - theta0*thetaI
+%var: m      100     // rate of manufacturing tests
+%var: r      0.8     // recall - true positives per positive
+%var: s      0.8     // specificity - true negatives per negative
+%var: eta    0.45    // trace 90% of contacts in two days
+
+// individuals have disease progression, testability and isolation status
+%agent: P(x{s e i r} t{y n} q{y n})
+// tests are discrete entities
+%agent: T()
+// traces follow the same disease progression as individuals
+%agent: C(x{s e i r})
+
+// manufacturing of tests
+'manufacturing' . -> T()  @ m
+
+// progression of individuals
+'progression'   P(x{e/i}, t{n/y}) @ alpha
+'removal'       P(x{i/r}, t{y/n}) @ gamma
+
+// progression of traces
+'c_progression' C(x{e/i}) @ alpha
+'c_removal'     C(x{i/r}) @ gamma
+'c_degradation' C() -> .  @ gamma
+
+// contact rules
+'lucky'         P(x{s}, q{n}), P(x{i}, q{n}), . -> 
+                P(x{s}, q{n}), P(x{i}, q{n}), C(x{s})   @ (1 - beta) * c / N  
+'infection'     P(x{s}, q{n}), P(x{i}, q{n}), . -> 
+                P(x{e}, q{n}), P(x{i}, q{n}), C(x{e})   @ beta * c / N
+'exposed'       P(x{e}, q{n}), P(x{i}, q{n}), . -> 
+                P(x{e}, q{n}), P(x{i}, q{n}), C(x{e})   @ c / N  
+'infected'      P(x{i}, q{n}), P(x{i}, q{n}), . -> 
+                P(x{i}, q{n}), P(x{i}, q{n}), C(x{i})   @ c / N  
+'immune'        P(x{r}, q{n}), P(x{i}, q{n}), . -> 
+                P(x{r}, q{n}), P(x{i}, q{n}), C(x{r})   @ c / N  
+
+// testing rules
+'test_tn'       P(t{n}, q{n}), T() -> P(t{n}, q{n}), . @ s*theta0
+'test_fp'       P(t{n}, q{n}), T() -> P(t{n}, q{y}), . @ (1-s)*theta0
+'test_tp'       P(t{y}, q{n}), T() -> P(t{y}, q{y}), . @ r*theta
+'test_fn'       P(t{y}, q{n}), T() -> P(t{y}, q{n}), . @ (1-r)*theta
+
+// tracing rules
+'trace_s'       P(x{s}, q{#}), P(q{y}), C(x{s}) ->
+                P(x{s}, q{y}), P(q{y}), .        @ eta * theta / N
+'trace_e'       P(x{e}, q{#}), P(q{y}), C(x{e}) ->
+                P(x{e}, q{y}), P(q{y}), .        @ eta * theta / N
+'trace_i'       P(x{i}, q{#}), P(q{y}), C(x{i}) ->
+                P(x{i}, q{y}), P(q{y}), .        @ eta * theta / N
+'trace_r'       P(x{r}, q{#}), P(q{y}), C(x{r}) ->
+                P(x{r}, q{y}), P(q{y}), .        @ eta * theta / N
+
+// exit from isolation
+'exit_s'        P(x{s}, q{y/n}) @ gamma
+'exit_r'        P(x{r}, q{y/n}) @ gamma
+
+%obs: Sn    |P(x{s}, q{n})|
+%obs: En    |P(x{e}, q{n})|
+%obs: In    |P(x{i}, q{n})|
+%obs: Rn    |P(x{r}, q{n})|
+%obs: Sy    |P(x{s}, q{y})|
+%obs: Ey    |P(x{e}, q{y})|
+%obs: Iy    |P(x{i}, q{y})|
+%obs: Ry    |P(x{r}, q{y})|
+%obs: Cs    |C(x{s})|
+%obs: Ce    |C(x{e})|
+%obs: Ci    |C(x{i})|
+%obs: Cr    |C(x{r})|
+
+// variables for population size and initialisation
+%var: N      10000       // total population
+// initially infectious
+%var: INIT_I 100
+// initially susceptible
+%var: INIT_S N - INIT_I
+
+%init: INIT_I P(x{i}, t{n}, q{n})
+%init: INIT_S P(x{s}, t{n}, q{n})

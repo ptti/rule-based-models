@@ -1,0 +1,40 @@
+%var: beta  0.025  // infection probability per contact
+%var: alpha 0.2    // progression from exposed to infectious
+%var: gamma 0.1429 // progression from infectious to removed
+%var: omega 8      // wash hands omega times per day
+%var: tau   16     // rate at which hands become dirty
+%var: kappa 12     // contact rate with surfaces
+%var: delta 6      // decontamination rate for surfaces
+
+// individuals can have clean or dirty hands
+%agent: P(x{s e i r} h{c d})
+// surfaces can be contaminated or not
+%agent: S(c{y n})
+
+'progression'     P(x{e/i}) @ alpha
+'removal'         P(x{i/r}) @ gamma
+
+'washing'         P(h{d}) <-> P(h{c}) @ omega, tau
+
+'contamination'   S(c{#}), P(x{i}, h{d}) -> S(c{y}), P(x{i}, h{d}) @ kappa/N
+'decontamination' S(c{y/n}) @ delta
+
+'infection'       P(x{s/e}, h{d}), S(c{y}) @ beta * kappa / NS
+
+%obs: S     |P(x{s})|
+%obs: E     |P(x{e})|
+%obs: I     |P(x{i})|
+%obs: R     |P(x{r})|
+%obs: C     |S(c{y})|
+
+// variables for population size and initialisation
+%var: N      10000       // total population
+%var: NS     2500        // number of surfaces
+// initially infectious
+%var: INIT_I 100
+// initially susceptible
+%var: INIT_S N - INIT_I
+
+%init: INIT_I P(x{i}, h{d})
+%init: INIT_S P(x{s}, h{d})
+%init: NS     S(c{n})

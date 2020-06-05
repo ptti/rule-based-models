@@ -1,0 +1,44 @@
+%var: beta  0.00005 // probability of infection from a bite
+%var: bprime 0.0025 // probability of vector becoming infectious
+%var: alpha 0.2     // progression from exposed to infectious
+%var: gamma 0.1429  // progression from infectious to removed
+%var: kappa 0.0714  // bites per day per mosquito
+%var: kb    0.1429  // birth rate slightly slower than
+%var: kd    0.1429  // death rate
+%var: water 1       // amount of the breeding habitat available
+
+// individuals simply have disease progression states
+%agent: P(x{s e i r})
+// vectors can be susceptible or infectious
+%agent: V(x{s i})
+
+'progression'     P(x{e/i}) @ alpha
+'removal'         P(x{i/r}) @ gamma
+
+'birth'           V(), . -> V(), V(x{s}) @ water * kb
+'death'           V()    -> .            @ kd
+
+'biting'          V(x{s/i}), P(x{i}) @ bprime * kappa * N / (N + M)
+'infection'       P(x{s/e}), V(x{i}) @ beta * kappa * M / (N + M)
+
+%obs: S     |P(x{s})|
+%obs: E     |P(x{e})|
+%obs: I     |P(x{i})|
+%obs: R     |P(x{r})|
+%obs: Vs    |V(x{s})|
+%obs: Vi    |V(x{i})|
+
+// variables for population size and initialisation
+%var: N      10000       // total population
+%var: M      50000       // number of mosquitoes
+// initially infectious
+%var: INIT_I 100
+// initially susceptible
+%var: INIT_S N - INIT_I
+
+%init: INIT_I P(x{i})
+%init: INIT_S P(x{s})
+%init: M      V(x{s})
+
+// perturbation: track the number of vectors
+%mod: [true] do $UPDATE M |V()|;            repeat [true]

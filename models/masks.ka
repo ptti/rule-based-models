@@ -1,0 +1,44 @@
+%var: beta  0.034  // infection probability per contact
+%var: c     13     // contact rate per day
+%var: alpha 0.2    // progression from exposed to infectious
+%var: gamma 0.1429 // progression from infectious to removed
+%var: mu    0.24   // convincing rate for mask wearing
+%var: nu    0.28   // removal rate for masks
+
+// effect of different combinations of mask wearing
+%var: mask_nn 1.0  // no masks
+%var: mask_yn 0.5  // infectious wears mask, susceptible not 
+%var: mask_ny 0.8  // susceptible wears mask, infectious not
+%var: mask_yy 0.2  // both wear masks
+
+%agent: P(x{s e i r} m{y n})
+
+'progression'  P(x{e/i}) @ alpha
+'removal'      P(x{i/r}) @ gamma
+
+'infection_nn' P(x{s/e}, m{n}), P(x{i}, m{n}) @ mask_nn * beta * c / N
+'infection_yn' P(x{s/e}, m{y}), P(x{i}, m{n}) @ mask_yn * beta * c / N
+'infection_ny' P(x{s/e}, m{n}), P(x{i}, m{y}) @ mask_ny * beta * c / N
+'infection_yy' P(x{s/e}, m{y}), P(x{i}, m{y}) @ mask_yy * beta * c / N
+
+'convincing'   P(m{n/y}), P(m{y}) @ mu/N // start wearing masks
+'removing'     P(m{y/n}), P(x{r}) @ nu/N // stop wearing masks
+
+%obs: S     |P(x{s})|
+%obs: E     |P(x{e})|
+%obs: I     |P(x{i})|
+%obs: R     |P(x{r})|
+%obs: M     |P(m{y})|
+
+// variables for population size and initialisation
+%var: N       10000       // total population
+// initially infectious and mask wearing
+%var: INIT_IY 50
+// initially infectious and not mask wearing
+%var: INIT_IN 100 - INIT_IY
+// initially susceptible
+%var: INIT_SN N - INIT_IY - INIT_IN
+
+%init: INIT_IN P(x{i}, m{n})
+%init: INIT_IY P(x{i}, m{y})
+%init: INIT_SN P(x{s}, m{n})

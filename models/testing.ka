@@ -1,0 +1,49 @@
+%var: beta   0.034   // probability of infection from contact
+%var: c      13      // contact rate, lower than normal
+%var: alpha  0.2     // progression from exposed to infectious
+%var: gamma  0.1429  // progression from infectious to removed
+%var: theta0 0.0714  // rate of testing in the general population
+%var: thetaI 1.0     // rate of testing of infectious population
+%var: theta  theta0 + thetaI - theta0*thetaI
+%var: m      500     // rate of manufacturing tests
+%var: r      0.8     // recall - true positives per positive
+%var: s      0.8     // specificity - true negatives per negative
+
+// individuals have disease progression, testability and isolation status
+%agent: P(x{s e i r} t{y n} q{y n})
+// tests are discrete entities
+%agent: T()
+
+'manufacturing' . -> T()  @ m
+
+'progression'   P(x{e/i}, t{n/y}) @ alpha
+'removal'       P(x{i/r}, t{y/n}) @ gamma
+
+'infection'     P(x{s/e}, q{n}), P(x{i}, q{n}) @ beta * c / N
+
+'test_tn'       P(t{n}, q{n}), T() -> P(t{n}, q{n}), . @ s*theta0
+'test_fp'       P(t{n}, q{n}), T() -> P(t{n}, q{y}), . @ (1-s)*theta0
+'test_tp'       P(t{y}, q{n}), T() -> P(t{y}, q{y}), . @ r*theta
+'test_fn'       P(t{y}, q{n}), T() -> P(t{y}, q{n}), . @ (1-r)*theta
+
+'exit_s'        P(x{s}, q{y/n}) @ gamma
+'exit_r'        P(x{r}, q{y/n}) @ gamma
+
+%obs: Sn    |P(x{s}, q{n})|
+%obs: En    |P(x{e}, q{n})|
+%obs: In    |P(x{i}, q{n})|
+%obs: Rn    |P(x{r}, q{n})|
+%obs: Sy    |P(x{s}, q{y})|
+%obs: Ey    |P(x{e}, q{y})|
+%obs: Iy    |P(x{i}, q{y})|
+%obs: Ry    |P(x{r}, q{y})|
+
+// variables for population size and initialisation
+%var: N      10000       // total population
+// initially infectious
+%var: INIT_I 100
+// initially susceptible
+%var: INIT_S N - INIT_I
+
+%init: INIT_I P(x{i}, t{n}, q{n})
+%init: INIT_S P(x{s}, t{n}, q{n})

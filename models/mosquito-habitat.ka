@@ -1,0 +1,2 @@
+// perturbation: destroy habitat
+%mod: [T] > 60 do $UPDATE water water * 0.5;

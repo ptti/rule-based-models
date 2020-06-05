@@ -1,0 +1,62 @@
+%var: beta   0.034  // infection probability per contact
+%var: c      13     // contacts per unit time
+%var: d      0.01   // contact duration ~ 15 mins
+%var: alpha  0.2    // progression from exposed to infectious
+%var: gamma  0.1429 // progression from infectious to removed
+%var: school 0.5    // fraction of the waking day spent at school
+%var: lock   0.3    // reduction in contact due to lockdown
+%var: child  2      // increase in contact at school
+
+// individuals have the usual disease progression states and
+// are in two groups -- children and adults. bonds form between
+// these individuals.
+%agent: P(x{s e i r} a{c a} e1 e2 e3)
+
+// Pair adults
+'parents'  P(a{a}, e3[./3]), P(a{a}, e3[./3]) @ inf
+
+// Produce children
+'children' P(a{a}, e1[./1], e3[3]), P(a{a}, e2[./2], e3[3]),
+           P(a{c}, e1[./1], e2[./2]) @ inf
+
+// infection 
+'infection'    P(x{s/e}), P(x{i})               @ lock*beta*c/N
+'infection_sc' P(x{s/e}, a{c}),  P(x{i}, a{c})  @ (child*school*beta*c)/(P_CHILD*N)
+'infection_e1' P(x{s/e}, e1[1]), P(x{i}, e1[1]) @ (1-school)*beta/d
+'infection_e2' P(x{s/e}, e2[2]), P(x{i}, e2[2]) @ (1-school)*beta/d
+'infection_e3' P(x{s/e}, e3[3]), P(x{i}, e3[3]) @ beta/d
+
+'progression' P(x{e/i}) @ alpha
+'removal'     P(x{i/r}) @ gamma
+
+%obs: S     |P(x{s})|
+%obs: E     |P(x{e})|
+%obs: I     |P(x{i})|
+%obs: R     |P(x{r})|
+%obs: Sa    |P(a{a}, x{s})|
+%obs: Ea    |P(a{a}, x{e})|
+%obs: Ia    |P(a{a}, x{i})|
+%obs: Ra    |P(a{a}, x{r})|
+%obs: Sc    |P(a{c}, x{s})|
+%obs: Ec    |P(a{c}, x{e})|
+%obs: Ic    |P(a{c}, x{i})|
+%obs: Rc    |P(a{c}, x{r})|
+%obs: F1    |P(e3[.])|
+%obs: F2    |P(e1[.],e2[.],e3[_])|/2
+%obs: F3    |P(e1[_],e2[.],e3[_])|
+%obs: F4    |P(e1[_],e2[_],e3[_])|/2
+
+// variables for population size and initialisation
+%var: N      10000       // total population
+// initially infectious
+%var: INIT_I 50
+// initially susceptible
+%var: INIT_S N - INIT_I
+
+// probability of being a child
+%var: P_CHILD 0.25
+
+%init: INIT_I*P_CHILD     P(x{i}, a{c})
+%init: INIT_I*(1-P_CHILD) P(x{i}, a{a})
+%init: INIT_S*P_CHILD     P(x{s}, a{c})
+%init: INIT_S*(1-P_CHILD) P(x{s}, a{a})
