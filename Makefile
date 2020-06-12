@@ -1,5 +1,6 @@
 all:
-	make -C data $@
+	${MAKE} -C data $@
 
 clean:
-	make -C data $@
+	${MAKE} -C data $@
+	${MAKE} -C models $@

@@ -8,7 +8,7 @@ KASIM=KaSim -mode batch -u time -p 1 --no-log
 
 all:
 	${MAKE} MODEL=masks masks.tsv
-	${MAKE} MODEL=masks ARGS="-var mu 0" nomasks.tsv
+	${MAKE} MODEL=masks ARGS="-var sp 0" nomasks.tsv
 	${MAKE} MODEL=fomites fomites.tsv
 	${MAKE} MODEL=fomites ARGS="-var omega 0" nowash.tsv
 	${MAKE} MODEL=mosquitoes vector.tsv
@@ -17,6 +17,7 @@ all:
 	${MAKE} MODEL=testing ARGS="-var m 250" lowtest.tsv
 	${MAKE} MODEL=tracing tracing.tsv
 	${MAKE} MODEL=tracing ARGS="-var r 1 -var s 1" perfect.tsv
+	${MAKE} MODEL=maskademic maskademic.tsv
 	${MAKE} MODEL=school school.tsv
 	${MAKE} MODEL=school ARGS="-var school 0" noschool.tsv
 	${MAKE} tti-0.tsv

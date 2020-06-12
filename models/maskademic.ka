@@ -2,9 +2,9 @@
 %var: c     13     // contact rate per day
 %var: alpha 0.2    // progression from exposed to infectious
 %var: gamma 0.1429 // progression from infectious to removed
-%var: mu    1.0    // convincing rate for mask wearing
-%var: nu    0.2    // convincing rate for mask removal
+%var: mu    0.25   // convincing rate for mask wearing
 %var: sp    0.5    // spontaneous use of masks
+%var: kf    0.2    // forgetting of recent patterns of wearing
 
 // effect of different combinations of mask wearing
 %var: mask_nn 1.0  // no masks
@@ -13,6 +13,7 @@
 %var: mask_yy 0.2  // both wear masks
 
 %agent: P(x{s e i r} m{y n})
+%agent: M(w{y n})
 
 'progression'  P(x{e/i}) @ alpha
 'removal'      P(x{i/r}) @ gamma
@@ -22,11 +23,15 @@
 'infection_ny' P(x{s/e}, m{n}), P(x{i}, m{y}) @ mask_ny * beta * c / N
 'infection_yy' P(x{s/e}, m{y}), P(x{i}, m{y}) @ mask_yy * beta * c / N
 
-'convincing'   P(m{n/y}), P(m{y}) @ mu/N // start wearing masks
-'removing'     P(m{y/n}), P(m{n}) @ nu/N // stop wearing masks
+'convincing'   P(m{n}), M(w{y}), . ->
+               P(m{y}), M(w{y}), M(w{y}) @ mu/N // start wearing masks
+'removing'     P(m{y}), M(w{n}), . ->
+               P(m{n}), M(w{n}), M(w{n}) @ mu/N // stop wearing masks
 
-'spont_mask'   P(m{n/y}) @ sp*PI
-'spont_unmask' P(m{y/n}) @ sp*(1-PI)
+'spont_mask'   P(m{n}), . -> P(m{y}), M(w{y}) @ sp*PI
+'spont_unmask' P(m{y}), . -> P(m{n}), M(w{n}) @ sp*(1-PI)
+
+'forgetting'   M() -> . @ kf
 
 %obs: S     |P(x{s})|
 %obs: E     |P(x{e})|
@@ -35,12 +40,13 @@
 %obs: M     |P(m{y})|
 
 // variables for population size and initialisation
-%var: N       10000       // total population
+%var: N      10000       // total population
 // initially infectious
-%var: INIT_I  50
-%var: INIT_S  N - INIT_I
+%var: INIT_I 50
+// initially susceptible
+%var: INIT_S N - INIT_I
 // fraction susceptible
-%var: PI      INIT_I/N
+%var: PI     INIT_I/N
 
 %init: INIT_I P(x{i}, m{n})
 %init: INIT_S P(x{s}, m{n})
