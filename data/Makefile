@@ -20,13 +20,12 @@ all:
 	${MAKE} MODEL=maskademic maskademic.tsv
 	${MAKE} MODEL=school school.tsv
 	${MAKE} MODEL=school ARGS="-var school 0" noschool.tsv
-	${MAKE} MODEL=policies ARGS="-var triso 0 -var thetaT 0 -var thetaD 0 -var thetaI 0" policies-nothing.tsv
-	${MAKE} MODEL=policies ARGS="-var triso 0 -var thetaT 0 -var thetaI 0" policies-diagnosis.tsv
-	${MAKE} MODEL=policies ARGS="-var triso 1 -var thetaT 0 -var thetaI 0" policies-diagnosis-tracing.tsv
-	${MAKE} MODEL=policies ARGS="-var triso 1 -var thetaT 0"               policies-diagnosis-release.tsv
-	${MAKE} MODEL=policies ARGS="-var triso 0 -var thetaD 0 -var thetaI 0" policies-testing.tsv
-	${MAKE} MODEL=policies ARGS="-var triso 0"                             policies-testing-release.tsv
-	${MAKE} MODEL=policies                                                 policies-all.tsv
+	${MAKE} MODEL=policies ARGS="-var thetaT 0 -var thetaD 0 -var thetaI 0" policies-nothing.tsv
+	${MAKE} MODEL=policies ARGS="-var thetaT 0 -var thetaI 0" policies-diagnosis.tsv
+	${MAKE} MODEL=policies ARGS="-var thetaT 0"               policies-diagnosis-release.tsv
+	${MAKE} MODEL=policies ARGS="-var thetaD 0 -var thetaI 0" policies-testing.tsv
+	${MAKE} MODEL=policies ARGS=""                            policies-testing-release.tsv
+	${MAKE} MODEL=policies                                    policies-all.tsv
 	${MAKE} tti-0.tsv
 
 clean:
