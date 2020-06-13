@@ -114,11 +114,11 @@
 //// III. Rules relating to isulation
 ////
 
-// 1 - isolate because of symptoms
-//'iso_sym'   P(s{y}, q{n/y}) @ k_iso
-
-// 2 - isolate because of test
+// 1 - isolate because of test
 'iso_test'  P(r{y}, q{n/y}) @ k_iso
+
+// 2 - rapidly exit from isolation on a negative test
+'exit_test' P(r{n}, q{y/n}) @ k_iso
 
 // 3 - exit from isolation if no symptoms
 'exit_s'    P(x{s}, q{y/n})             @ k_exit
