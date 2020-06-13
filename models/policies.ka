@@ -171,6 +171,11 @@
 %obs: Ey    |P(x{e}, q{y})|
 %obs: Iy    |P(x{i}, q{y})|
 %obs: Ry    |P(x{r}, q{y})|
+%obs: Cs    |P(x{s})|
+%obs: Ce    |P(x{e})|
+%obs: Ci    |P(x{i})|
+%obs: Cr    |P(x{r})|
+%obs: Cf    |P(x{f})|
 %obs: T     |T()|
 %obs: Tbusy |T(u[_])|
 %obs: Tused |T(u{y})|
