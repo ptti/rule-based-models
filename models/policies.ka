@@ -6,7 +6,7 @@
 %var: c      13       // contact rate
 %var: k_pro  1.0/3    // progression from exposed to prodromic
 %var: k_inf  1.0/2    // progression from prodromic to full disease
-%var: p_asym 0.4      // probability of being asymptomatic
+%var: p_asym 0.5      // probability of being asymptomatic
 %var: k_rem  1.0/7    // removal by recovery or death
 %var: k_iso  12       // rate of isolation -- within 2 hours
 %var: k_exit 1.0/14   // rate of leaving isolation
@@ -95,8 +95,8 @@
 // 1 - clinically diagnose those symptomatic
 'clinical'    P(s{y}, r{x/y}) @ thetaD
 
-// 2 - test those in the population who are symptomatic
-'symptomatic' P(c{s}, r{x}, t[.]), T(u[.]{n}) -> P(c{s}, r{x}, t[1]), T(u[1]{y}) @ thetaT
+// 2 - test those in the population not isolated who are symptomatic
+'symptomatic' P(s{y}, q{n}, r{x}, t[.]), T(u[.]{n}) -> P(s{y}, q{n}, r{x}, t[1]), T(u[1]{y}) @ thetaT
 
 // 3 - test those who have been isolated and are untested
 'isolated'    P(q{y}, r{x}, t[.]), T(u[.]{n}) -> P(q{y}, r{x}, t[1]), T(u[1]{y}) @ thetaI
@@ -178,7 +178,6 @@
 %obs: Cf    |C(x{f})|
 %obs: T     |T()|
 %obs: Tbusy |T(u[_])|
-%obs: Tused |T(u{y})|
 
 // initially infectious
 %var: INIT_I 0.005*N
