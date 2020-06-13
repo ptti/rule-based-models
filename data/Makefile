@@ -20,6 +20,13 @@ all:
 	${MAKE} MODEL=maskademic maskademic.tsv
 	${MAKE} MODEL=school school.tsv
 	${MAKE} MODEL=school ARGS="-var school 0" noschool.tsv
+	${MAKE} MODEL=policies ARGS="-var triso 0 -var thetaT 0 -var thetaD 0 -var thetaI 0" policies-nothing.tsv
+	${MAKE} MODEL=policies ARGS="-var triso 0 -var thetaT 0 -var thetaI 0" policies-diagnosis.tsv
+	${MAKE} MODEL=policies ARGS="-var triso 1 -var thetaT 0 -var thetaI 0" policies-diagnosis-tracing.tsv
+	${MAKE} MODEL=policies ARGS="-var triso 1 -var thetaT 0"               policies-diagnosis-release.tsv
+	${MAKE} MODEL=policies ARGS="-var triso 0 -var thetaD 0 -var thetaI 0" policies-testing.tsv
+	${MAKE} MODEL=policies ARGS="-var triso 0"                             policies-testing-release.tsv
+	${MAKE} MODEL=policies                                                 policies-all.tsv
 	${MAKE} tti-0.tsv
 
 clean:
@@ -35,30 +42,3 @@ clean:
 
 tti-0.tsv: ${MODELS}/tti.yaml
 	ptti -y $<
-policy-testing.tsv: .policies-testing
-	${SCRIPTS}/envelope -k -d, -o $@ -i policies/testing-[0-9]*.dat
-.policies-testing: ${MODELS}/policies.ka
-	seq ${SAMPLES} | parallel ${KASIM} -seed '{}' -o policies/testing-'{}'.dat -l ${TMAX} -var N ${N} -var INIT_I ${I0} -var thetaD 0 -var thetaI 0 $< && touch $@
-
-policy-testing-release.tsv: .policies-testing-release
-	${SCRIPTS}/envelope -k -d, -o $@ -i policies/testing-release-[0-9]*.dat
-.policies-testing-release: ${MODELS}/policies.ka
-	seq ${SAMPLES} | parallel ${KASIM} -seed '{}' -o policies/testing-release-'{}'.dat -l ${TMAX} -var N ${N} -var INIT_I ${I0} -var thetaD 0 $< && touch $@
-
-policy-diagnosis.tsv: .policies-diagnosis
-	${SCRIPTS}/envelope -k -d, -o $@ -i policies/diagnosis-[0-9]*.dat
-.policies-diagnosis: ${MODELS}/policies.ka
-	mkdir -p policies
-	seq ${SAMPLES} | parallel ${KASIM} -seed '{}' -o policies/diagnosis-'{}'.dat -l ${TMAX} -var N ${N} -var INIT_I ${I0} -var thetaT 0 -var thetaI 0 $< && touch $@
-
-policy-diagnosis-release.tsv: .policies-diagnosis-release
-	${SCRIPTS}/envelope -k -d, -o $@ -i policies/diagnosis-release-[0-9]*.dat
-.policies-diagnosis-release: ${MODELS}/policies.ka
-	mkdir -p policies
-	seq ${SAMPLES} | parallel ${KASIM} -seed '{}' -o policies/diagnosis-release-'{}'.dat -l ${TMAX} -var N ${N} -var INIT_I ${I0} -var thetaT 0 $< && touch $@
-
-policy-nothing.tsv: .policies-nothing
-	${SCRIPTS}/envelope -k -d, -o $@ -i policies/nothing-[0-9]*.dat
-.policies-nothing: ${MODELS}/policies.ka
-	mkdir -p policies
-	seq ${SAMPLES} | parallel ${KASIM} -seed '{}' -o policies/nothing-'{}'.dat -l ${TMAX} -var N ${N} -var INIT_I ${I0} -var thetaD 0 -var thetaT 0 -var thetaI 0 $< && touch $@

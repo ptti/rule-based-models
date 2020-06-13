@@ -1,15 +1,21 @@
+////
+//// Constants of the simulation
+////
 %var: N      1000     // total population
 %var: beta   0.034    // probability of infection from contact
-%var: c      13       // contact rate, lower than normal
+%var: c      13       // contact rate
 %var: k_pro  1.0/3    // progression from exposed to prodromic
 %var: k_inf  1.0/2    // progression from prodromic to full disease
 %var: p_asym 0.4      // probability of being asymptomatic
 %var: k_rem  1.0/7    // removal by recovery or death
+%var: k_iso  12       // rate of isolation -- within 2 hours
 %var: k_exit 1.0/14   // rate of leaving isolation
 %var: k_retest 1.0/14 // rate of allowing retesting
+%var: k_result 1.0    // time to get test result
 %var: k_flu  1.0/365  // rate of getting the flu, once per year
 %var: d_flu  7        // duration of flu
 %var: p_flu  d_flu*k_flu // prevalence of flu
+%var: trflu  1.0      // tracing based on flu-like symptoms
 %var: thetaT 1.0/3    // rate of kit testing in population
 %var: thetaD 1.0/3    // rate of clinical diagnosis
 %var: thetaI 1.0/7    // rate of testing of isolated population
@@ -19,94 +25,138 @@
 %var: s      1.0      // specificity - true negatives per negative
 %var: eta    0.45     // trace 90% of contacts in two days
 
+
+////
+//// Agents, or participants in the simulation
+////
+
 // individuals have several internal states:
 //   - x corresponds to the standard SEIR compartments
-//   - s symptomaticity: prodromic, asymptomatic, symptomatic
+//   - c covid symptomaticity: prodromic, asymptomatic, symptomatic
+//   - s symptomaticity from covid, cold, flu, etc
 //   - t indicates whether testing should give positive or negative
 //   - r test result, x for untested
 //   - q isolation status
-//   - f ill with the flu or not
-%agent: P(x{s e i r} s{p a s} t{y n} r{x y n} q{y n} f{y n})
-// tests are discrete entities and may be scarce
-%agent: T()
-// traces follow the same disease progression as individuals
-%agent: C(x{s e i r})
+//   - f infected with the flu, or not
+%agent: P(x{s e i r} c{p a s} s{y n} t{y n} r{x y n} q{y n} f{y n})
+// tests are discrete entities and may be scarce, when being used,
+// they are bound to an individual, and are used or not
+%agent: T(u{y n})
+// traces follow the same disease progression as individuals, and flu
+%agent: C(x{s e i r f})
+
+////
+//// I. Rules relating to infectious disease infection and progression
+////
+
+// 1 - contact rules for unconfined individuals with the covid
+'infection'   P(x{s}, q{n}), P(x{i}, q{n}), . -> 
+              P(x{e}, q{n}), P(x{i}, q{n}), C(x{e})   @ beta*c/N
+
+'lucky'       P(x{s}, q{n}), P(x{i}, q{n}), . ->
+              P(x{s}, q{n}), P(x{i}, q{n}), C(x{s})   @ (1-beta)*c/N
+
+'exposed'     P(x{e}, q{n}), P(x{i}, q{n}), . ->
+              P(x{e}, q{n}), P(x{i}, q{n}), C(x{e})   @ c/N
+
+'infected'    P(x{i}, q{n}), P(x{i}, q{n}), . ->
+              P(x{i}, q{n}), P(x{i}, q{n}), C(x{i})   @ c/N
+
+'immune'      P(x{r}, q{n}), P(x{i}, q{n}), . ->
+              P(x{r}, q{n}), P(x{i}, q{n}), C(x{r})   @ c/N
+
+'flu'         P(q{n}), P(f{y}, q{n}), . ->
+              P(q{n}), P(f{y}, q{n}), C(x{f})         @ c/N
+
+// 2 - progression of individuals to infectiousness. exposed individuals
+//     become infectious, at first prodromic, and should test positively
+'prog_pro'    P(x{e/i}, c{#/p} t{n/y})  @ k_pro
+
+// 3 - progression to asymptomatic for a fraction of prodromic individuals
+'prog_asym'   P(x{i}, c{p/a}) @ k_inf*p_asym
+// 4 - progression to symptomatic for the remainder
+'prog_sym'    P(x{i}, c{p/s}, s{#/y}) @ k_inf*(1-p_asym)
+
+// 5 - removal of asymptomatic individuals, no longer test positively
+'rem_asym'    P(x{i/r}, c{a}, t{y/n}) @ k_rem
+// 6 - removal of symptomatic individuals, no longer test positively
+'rem_sym'     P(x{i/r}, c{s}, t{y/n}, s{y/n}) @ k_rem
+
+// 7 - development and clearing of endemic flu symptoms
+'flu_dev'     P(f{n}, s{n}) <-> P(f{y}, s{y}) @ k_flu, 1/d_flu
+
+////
+//// II. Rules relating to testing
+////
 
 // manufacturing of tests
-'manufacturing' . -> T()  @ m
+'manufacturing' . -> T(u[.]{n}) @ m
 
-// infection self-isolation due to endemic flu
-'flu_infection' P(f{n/y}, q{#/y}) @ k_flu
-'flu_recovery'  P(f{y/n})         @ 1/d_flu
+// 1 - clinically diagnose those symptomatic
+'clinical'    P(s{y}, r{x/y}) @ thetaD
 
-// progression of individuals to infectiousness
-'prog_pro'      P(x{e/i}, s{p} t{n/y})  @ k_pro
-// progression to asymptomatic
-'prog_asym'     P(x{i}, s{p/a})         @ k_inf*p_asym
-// becoming symptomatic means self-isolation
-'prog_sym'      P(x{i}, s{p/s}, q{#/y}) @ k_inf*(1-p_asym)
+// 2 - test those in the population who are symptomatic
+'symptomatic' P(c{s}, r{x}, t[.]), T(u[.]{n}) -> P(c{s}, r{x}, t[1]), T(u[1]{y}) @ thetaT
 
-// recovery of asymptomatic individuals
-'rem_asym'      P(x{i/r}, s{a}, t{y/n})         @ k_rem
-// recovery from symptomatic also removal from isolation
-'rem_sym'       P(x{i/r}, s{s}, t{y/n}, q{y/n}) @ k_rem
+// 3 - test those who have been isolated and are untested
+'isolated'    P(q{y}, r{x}, t[.]), T(u[.]{n}) -> P(q{y}, r{x}, t[1]), T(u[1]{y}) @ thetaI
 
-// progression of traces parallel to individuals wthout
-// distinguishing severity
+// 4 - test results, true negatives and positives
+'test_tp'     P(t[_]{y}, r{x/y}) @ r*k_result
+'test_fn'     P(t[_]{y}, r{x/n}) @ (1-r)*k_result
+'test_tn'     P(t[_]{n}, r{x/n}) @ s*k_result
+'test_fp'     P(t[_]{n}, r{x/y}) @ (1-s)*k_result
+
+// 5 - allow for retesting after a time, release the test
+'retest'      P(t[1/.], r{#/x}), T(u[1/.]) @ k_retest
+
+////
+//// III. Rules relating to isulation
+////
+
+// 1 - isolate because of symptoms
+'iso_sym'   P(s{y}, q{n/y}) @ k_iso
+
+// 2 - isolate because of test
+'iso_test'  P(t{y}, q{n/y}) @ k_iso
+
+// 3 - exit from isolation if no symptoms
+'exit_s'    P(x{s}, q{y/n})             @ k_exit
+'exit_e'    P(x{e}, q{y/n})             @ k_exit
+'exit_ip'   P(x{i}, c{p}, r{n}, q{y/n}) @ k_exit // prodromic
+'exit_ia'   P(x{i}, c{a}, r{n}, q{y/n}) @ k_exit // asymptomatic
+'exit_ipx'  P(x{i}, c{p}, r{x}, q{y/n}) @ k_exit // prodromic
+'exit_iax'  P(x{i}, c{a}, r{x}, q{y/n}) @ k_exit // asymptomatic
+'exit_r'    P(x{r}, q{y/n})             @ k_exit
+
+////
+//// IV. Rules relating to tracing
+////
+
+// 1. progression of traces parallel to individuals wthout
+//    distinguishing severity
 'c_progression' C(x{e/i}) @ k_pro
 'c_removal'     C(x{i/r}) @ 1.0/(1.0/k_inf + 1.0/k_rem)
 'c_degradation' C() -> .  @ k_rem
 
-// contact rules
-'lucky'     P(x{s}, q{n}), P(x{i}, q{n}), . -> 
-            P(x{s}, q{n}), P(x{i}, q{n}), C(x{s})   @ (1-beta)*c/N
-'infection' P(x{s}, q{n}), P(x{i}, q{n}), . -> 
-            P(x{e}, q{n}), P(x{i}, q{n}), C(x{e})   @ beta*c/N
-'exposed'   P(x{e}, q{n}), P(x{i}, q{n}), . -> 
-            P(x{e}, q{n}), P(x{i}, q{n}), C(x{e})   @ c/N
-'infected'  P(x{i}, q{n}), P(x{i}, q{n}), . -> 
-            P(x{i}, q{n}), P(x{i}, q{n}), C(x{i})   @ c/N
-'immune'    P(x{r}, q{n}), P(x{i}, q{n}), . -> 
-            P(x{r}, q{n}), P(x{i}, q{n}), C(x{r})   @ c/N
+// 2. trace those who have had contact with positive
+//    tested individuals
+'trace_s'     P(x{s}, q{#}), P(r{y}), C(x{s}) ->
+              P(x{s}, q{y}), P(r{y}), .        @ eta*theta/N
+'trace_e'     P(x{e}, q{#}), P(r{y}), C(x{e}) ->
+              P(x{e}, q{y}), P(r{y}), .        @ eta*theta/N
+'trace_i'     P(x{i}, q{#}), P(r{y}), C(x{i}) ->
+              P(x{i}, q{y}), P(r{y}), .        @ eta*theta/N
+'trace_r'     P(x{r}, q{#}), P(r{y}), C(x{r}) ->
+              P(x{r}, q{y}), P(r{y}), .        @ eta*theta/N
 
-// testing rules 1 - clinically diagnose those symptomatic
-'test_cd'   P(s{s}, r{x/y}) @ thetaD
-'test_flu'  P(f{y}, r{x/y}) @ thetaD
+// 3. trace those who have had contact with flu case
+'trace_f'     P(q{#}), P(r{y}), C(x{f}) ->
+              P(q{y}), P(r{y}), C(x{f})        @ trflu*eta*theta/N
 
-// testing rules 2 - test those in the population who are symptomatic
-'test_p_tp' P(s{s}, r{x}), T() -> P(s{s}, r{y}), . @ r*thetaT
-'test_p_fn' P(s{s}, r{x}), T() -> P(s{s}, r{n}), . @ (1-r)*thetaT
-
-// testing rules 3 - test those who have been isolated and are
-// untested
-'test_tn'   P(t{n}, r{x}, q{y}), T() -> P(t{n}, r{n}, q{n}), . @ s*thetaI
-'test_fp'   P(t{n}, r{x}, q{y}), T() -> P(t{n}, r{y}, q{y}), . @ (1-s)*thetaI
-'test_tp'   P(t{y}, r{x}, q{y}), T() -> P(t{y}, r{y}, q{y}), . @ r*thetaI
-'test_fn'   P(t{y}, r{x}, q{y}), T() -> P(t{y}, r{n}, q{n}), . @ (1-r)*thetaI
-
-// testing rules 4 - allow for retesting after a time
-'retest'    P(r{#/x}) @ k_retest
-
-// tracing rules - trace those who have had contact with positive
-// tested individuals
-'trace_s'   P(x{s}, q{#}), P(r{y}), C(x{s}) ->
-            P(x{s}, q{y}), P(r{y}), .        @ eta*theta/N
-'trace_e'   P(x{e}, q{#}), P(r{y}), C(x{e}) ->
-            P(x{e}, q{y}), P(r{y}), .        @ eta*theta/N
-'trace_i'   P(x{i}, q{#}), P(r{y}), C(x{i}) ->
-            P(x{i}, q{y}), P(r{y}), .        @ eta*theta/N
-'trace_r'   P(x{r}, q{#}), P(r{y}), C(x{r}) ->
-            P(x{r}, q{y}), P(r{y}), .        @ eta*theta/N
-
-// exit from isolation
-'exit_s'    P(x{s}, q{y/n})             @ k_exit
-'exit_e'    P(x{e}, q{y/n})             @ k_exit
-'exit_ip'   P(x{i}, s{p}, r{n}, q{y/n}) @ k_exit // prodromic
-'exit_ia'   P(x{i}, s{a}, r{n}, q{y/n}) @ k_exit // asymptomatic
-'exit_ipx'  P(x{i}, s{p}, r{x}, q{y/n}) @ k_exit // prodromic
-'exit_iax'  P(x{i}, s{a}, r{x}, q{y/n}) @ k_exit // asymptomatic
-'exit_r'    P(x{r}, q{y/n})             @ k_exit
-
+////
+//// Observables, or things that we want to know from the simulation
+////
 %obs: Safe   |P(x{i}, q{y})|
 %obs: Active |P(x{s}, q{n})| + |P(x{r}, q{n})|
 %obs: Bored  |P(x{s}, q{y})| + |P(x{r}, q{y})|
@@ -120,16 +170,14 @@
 %obs: Ey    |P(x{e}, q{y})|
 %obs: Iy    |P(x{i}, q{y})|
 %obs: Ry    |P(x{r}, q{y})|
-%obs: Cs    |C(x{s})|
-%obs: Ce    |C(x{e})|
-%obs: Ci    |C(x{i})|
-%obs: Cr    |C(x{r})|
 %obs: T     |T()|
+%obs: Tbusy |T(u[_])|
+%obs: Tused |T(u{y})|
 
 // initially infectious
 %var: INIT_I 0.005*N
 // initially susceptible
 %var: INIT_S N - INIT_I
 
-%init: INIT_I P(x{i}, s{p}, t{n}, r{x}, q{n}, f{n})
-%init: INIT_S P(x{s}, s{p}, t{n}, r{x}, q{n}, f{n})
+%init: INIT_I P(x{i}, c{p}, s{n}, t{n}, r{x}, q{n}, f{n})
+%init: INIT_S P(x{s}, c{p}, s{n}, t{n}, r{x}, q{n}, f{n})
