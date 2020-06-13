@@ -89,8 +89,9 @@
 //// II. Rules relating to testing
 ////
 
-// manufacturing of tests
+// manufacturing and disposal of tests
 'manufacturing' . -> T(u[.]{n}) @ m
+'disposal'      T(u[.]{y}) -> . @ m
 
 // 1 - clinically diagnose those symptomatic
 'clinical'    P(s{y}, r{x/y}) @ thetaD
