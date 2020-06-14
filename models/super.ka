@@ -1,0 +1,63 @@
+%var: beta     0.016  // infection probability per contact
+%var: c_n      10     // normal contact rate per day
+%var: c_g      200    // gathering contact rate per day
+%var: alpha    0.2    // progression from exposed to infectious
+%var: gamma    0.1429 // progression from infectious to removed
+%var: gather   0      // how often gathering happens
+%var: k_gather 1      // how frequently to gather
+%var: k_leave  24     // how long a gathering lasts
+
+%agent: P(x{s e i r} g{y n} c{=1 / +=10})
+
+'progression'  P(x{e/i}) @ alpha
+'removal'      P(x{i/r}) @ gamma
+
+'infection_n'  P(x{s/e}, g{n}), P(x{i}, g{n}) @ beta * c_n / NN
+'infection_g'  P(x{s/e}, g{y}), P(x{i}, g{y}) @ beta * c_g / NG
+
+'gathering'    P(g{n/y}, c{=social}) @ gather * k_gather * social/10
+'leaving'      P(g{y/n}) @ k_leave
+
+'sort_1'  P(c{=0/+=1})  @ inf
+'sort_2'  P(c{=0/+=2})  @ inf
+'sort_3'  P(c{=0/+=3})  @ inf
+'sort_4'  P(c{=0/+=4})  @ inf
+'sort_5'  P(c{=0/+=5})  @ inf
+'sort_6'  P(c{=0/+=6})  @ inf
+'sort_7'  P(c{=0/+=7})  @ inf
+'sort_8'  P(c{=0/+=8})  @ inf
+'sort_9'  P(c{=0/+=9})  @ inf
+'sort_10' P(c{=0/+=10}) @ inf
+
+%obs: S     |P(x{s})|
+%obs: E     |P(x{e})|
+%obs: I     |P(x{i})|
+%obs: R     |P(x{r})|
+%obs: G     |P(g{y})|
+%obs: P1    |P(x{r}, c{=1})|
+%obs: P2    |P(x{r}, c{=2})|
+%obs: P3    |P(x{r}, c{=3})|
+%obs: P4    |P(x{r}, c{=4})|
+%obs: P5    |P(x{r}, c{=5})|
+%obs: P6    |P(x{r}, c{=6})|
+%obs: P7    |P(x{r}, c{=7})|
+%obs: P8    |P(x{r}, c{=8})|
+%obs: P9    |P(x{r}, c{=9})|
+%obs: P10   |P(x{r}, c{=10})|
+
+// variables for population size and initialisation
+%var: N       10000       // total population
+// initially infectious
+%var: INIT_I  50
+%var: INIT_S  N - INIT_I
+
+%init: INIT_I P(x{i}, g{n}, c{=0})
+%init: INIT_S P(x{s}, g{n}, c{=0})
+
+%var: NN N
+%var: NG 0
+%mod: [true] do $UPDATE NN |P(g{n})|; repeat [true]
+%mod: [true] do $UPDATE NG |P(g{y})|; repeat [true]
+
+%mod: alarm 0.25 gather > 0 do $UPDATE gather 0; repeat [true]
+%mod: alarm 1               do $UPDATE gather 1; repeat [true]
