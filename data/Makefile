@@ -20,6 +20,8 @@ all:
 	${MAKE} MODEL=maskademic maskademic.tsv
 	${MAKE} MODEL=school school.tsv
 	${MAKE} MODEL=school ARGS="-var school 0" noschool.tsv
+	${MAKE} MODEL=super ARGS="-p 0.1" super.tsv
+	${MAKE} MODEL=super ARGS="-var k_gather 0" nosuper.tsv
 	${MAKE} MODEL=policies ARGS="-var thetaT 0 -var thetaD 0 -var thetaI 0" policies-nothing.tsv
 	${MAKE} MODEL=policies ARGS="-var thetaT 0 -var thetaI 0" policies-diagnosis.tsv
 	${MAKE} MODEL=policies ARGS="-var thetaT 0"               policies-diagnosis-release.tsv
