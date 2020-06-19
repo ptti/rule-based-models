@@ -152,7 +152,7 @@
 
 // 3. trace those who have had contact with flu case
 'trace_f'     P(q{#}), P(r{y}), C(x{f}) ->
-              P(q{y}), P(r{y}), C(x{f})        @ eta*theta/N
+              P(q{y}), P(r{y}), .              @ eta*theta/N
 
 ////
 //// Observables, or things that we want to know from the simulation
