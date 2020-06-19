@@ -3,6 +3,7 @@ TMAX?=365
 N?=10000
 I0?=50
 MAXMEM?=2097152
+PROCS?=
 MODELS=../models
 SCRIPTS=../scripts
 KASIM=KaSim -mode batch -u time -p 1 --no-log
@@ -39,7 +40,7 @@ clean:
 
 %.tsv: ${MODELS}/${MODEL}.ka
 	mkdir -p traj
-	ulimit -v ${MAXMEM}; seq ${SAMPLES} | parallel ${KASIM} -seed '{}' -o traj/${@:%.tsv=%}-'{}'.dat -l ${TMAX} -var N ${N} -var INIT_I ${I0} ${ARGS} $< ${KAPPA} || true
+	ulimit -v ${MAXMEM}; seq ${SAMPLES} | parallel --will-cite ${PROCS} ${KASIM} -seed '{}' -o traj/${@:%.tsv=%}-'{}'.dat -l ${TMAX} -var N ${N} -var INIT_I ${I0} ${ARGS} $< ${KAPPA} || true
 	${SCRIPTS}/envelope -k -d, -o $@ -i traj/${@:%.tsv=%}-[0-9]*.dat
 
 tti-0.tsv: ${MODELS}/tti.yaml
