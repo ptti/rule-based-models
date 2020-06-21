@@ -1,10 +1,10 @@
 %var: beta     0.016  // infection probability per contact
 %var: c_n      10     // normal contact rate per day
-%var: c_g      200    // gathering contact rate per day
+%var: c_g      100    // gathering contact rate per day
 %var: alpha    0.2    // progression from exposed to infectious
 %var: gamma    0.1429 // progression from infectious to removed
 %var: gather   0      // how often gathering happens
-%var: k_gather 1      // how frequently to gather
+%var: k_gather 4      // how frequently to gather
 %var: k_leave  24     // how long a gathering lasts
 
 %agent: P(x{s e i r} g{y n} c{=1 / +=10})
