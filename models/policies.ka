@@ -8,7 +8,8 @@
 %var: k_inf  1.0/2    // progression from prodromic to full disease
 %var: p_asym 0.5      // probability of being asymptomatic
 %var: k_rem  1.0/7    // removal by recovery or death
-%var: k_iso  12       // rate of isolation -- within 2 hours
+%var: k_iso  12       // rate of isolation because of testing
+%var: k_self k_iso    // rate of self isolation on symptoms
 %var: k_exit 1.0/14   // rate of leaving isolation
 %var: k_retest 1.0/14 // rate of allowing retesting
 %var: k_result 1.0    // time to get test result
@@ -115,7 +116,7 @@
 ////
 
 // 1 - self-isolate because of symptoms
-'iso_sym'   P(s{y}, q{n/y}) @ k_iso
+'iso_sym'   P(s{y}, q{n/y}) @ k_self
 
 // 2 - isolate because of test
 'iso_test'  P(r{y}, q{n/y}) @ k_iso
