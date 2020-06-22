@@ -1,7 +1,7 @@
 # Scaling up epidemiological models with rule-based modelling
 
 This is a collection of models as described in our paper,
-[Scalimg up epidemiological models with rule-based modelling].
+[Scaling up epidemiological models with rule-based modelling].
 They are written in the [Kappa language] and the models themselves
 can be found in the [models/ subdirectory] of the repository on
 the Github. It is also possible to simulate them in your web
