@@ -4,8 +4,8 @@
 %var: N      10000    // total population
 %var: beta   0.034    // probability of infection from contact
 %var: c      6.5      // contact rate
-%var: k_pro  1.0/3    // progression from exposed to prodromic
-%var: k_inf  1.0/2    // progression from prodromic to full disease
+%var: k_pro  1.0/4    // progression from exposed to prodromic
+%var: k_inf  1.0      // progression from prodromic to full disease
 %var: p_asym 0.5      // probability of being asymptomatic
 %var: k_rem  1.0/7    // removal by recovery or death
 %var: p_iso  1.0      // fraction of population prone to self-isolating
