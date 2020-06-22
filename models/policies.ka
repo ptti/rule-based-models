@@ -8,8 +8,8 @@
 %var: k_inf  1.0/2    // progression from prodromic to full disease
 %var: p_asym 0.5      // probability of being asymptomatic
 %var: k_rem  1.0/7    // removal by recovery or death
-%var: k_iso  12       // rate of isolation because of testing
-%var: k_self k_iso    // rate of self isolation on symptoms
+%var: p_iso  1.0      // fraction of population prone to self-isolating
+%var: k_iso  12       // rate of isolation -- within 2 hours
 %var: k_exit 1.0/14   // rate of leaving isolation
 %var: k_retest 1.0/14 // rate of allowing retesting
 %var: k_result 1.0    // time to get test result
@@ -38,7 +38,8 @@
 //   - r test result, x for untested
 //   - q isolation status
 //   - f infected with the flu, or not
-%agent: P(x{s e i r} c{p a s} s{y n} t{y n} r{x y n} q{y n} f{y n})
+//   - i prone to self-isolation or not
+%agent: P(x{s e i r} c{p a s} s{y n} t{y n} r{x y n} q{y n} f{y n} i{y n})
 // tests are discrete entities and may be scarce, when being used,
 // they are bound to an individual, and are used or not
 %agent: T(u{y n})
@@ -116,7 +117,7 @@
 ////
 
 // 1 - self-isolate because of symptoms
-'iso_sym'   P(s{y}, q{n/y}) @ k_self
+'iso_sym'   P(s{y}, i{y}, q{n/y}) @ k_iso
 
 // 2 - isolate because of test
 'iso_test'  P(r{y}, q{n/y}) @ k_iso
@@ -183,5 +184,7 @@
 // initially susceptible
 %var: INIT_S N - INIT_I
 
-%init: INIT_I P(x{i}, c{p}, s{n}, t{n}, r{x}, q{n}, f{n})
-%init: INIT_S P(x{s}, c{p}, s{n}, t{n}, r{x}, q{n}, f{n})
+%init: INIT_I*p_iso     P(x{i}, c{p}, s{n}, t{n}, r{x}, q{n}, f{n}, i{y})
+%init: INIT_I*(1-p_iso) P(x{i}, c{p}, s{n}, t{n}, r{x}, q{n}, f{n}, i{n})
+%init: INIT_S*p_iso     P(x{s}, c{p}, s{n}, t{n}, r{x}, q{n}, f{n}, i{y})
+%init: INIT_S*(1-p_iso) P(x{s}, c{p}, s{n}, t{n}, r{x}, q{n}, f{n}, i{n})
