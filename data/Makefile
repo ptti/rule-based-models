@@ -24,12 +24,6 @@ all:
 	${MAKE} MODEL=school ARGS="-var school 0" noschool.tsv
 	${MAKE} MODEL=super ARGS="-p 0.1" super.tsv
 	${MAKE} MODEL=super ARGS="-var k_gather 0" nosuper.tsv
-	${MAKE} MODEL=policies ARGS="-var thetaT 0 -var thetaD 0 -var thetaI 0" policies-nothing.tsv
-	${MAKE} MODEL=policies ARGS="-var thetaT 0 -var thetaI 0" policies-diagnosis.tsv
-	${MAKE} MODEL=policies ARGS="-var thetaT 0"               policies-diagnosis-release.tsv
-	${MAKE} MODEL=policies ARGS="-var thetaD 0 -var thetaI 0" policies-testing.tsv
-	${MAKE} MODEL=policies ARGS=""                            policies-testing-release.tsv
-	${MAKE} MODEL=policies                                    policies-all.tsv
 	${MAKE} tti-0.tsv
 
 clean:
