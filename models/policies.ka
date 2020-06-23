@@ -45,6 +45,8 @@
 %agent: T(u{y n})
 // traces follow the same disease progression as individuals, and flu
 %agent: C(x{s e i r f})
+// record of individuals traced
+%agent: R()
 
 ////
 //// I. Rules relating to infectious disease infection and progression
@@ -146,14 +148,14 @@
 
 // 2. trace those who have had contact with positive
 //    tested individuals
-'trace_s'     P(x{s}, q{#}), P(r{y}), C(x{s}) ->
-              P(x{s}, q{y}), P(r{y}), .        @ eta*theta/N
-'trace_e'     P(x{e}, q{#}), P(r{y}), C(x{e}) ->
-              P(x{e}, q{y}), P(r{y}), .        @ eta*theta/N
-'trace_i'     P(x{i}, q{#}), P(r{y}), C(x{i}) ->
-              P(x{i}, q{y}), P(r{y}), .        @ eta*theta/N
-'trace_r'     P(x{r}, q{#}), P(r{y}), C(x{r}) ->
-              P(x{r}, q{y}), P(r{y}), .        @ eta*theta/N
+'trace_s'     P(x{s}, q{#}), P(r{y}), C(x{s}), . ->
+              P(x{s}, q{y}), P(r{y}), ., R()         @ eta*theta/N
+'trace_e'     P(x{e}, q{#}), P(r{y}), C(x{e}), . ->
+              P(x{e}, q{y}), P(r{y}), ., R()         @ eta*theta/N
+'trace_i'     P(x{i}, q{#}), P(r{y}), C(x{i}), . ->
+              P(x{i}, q{y}), P(r{y}), ., R()         @ eta*theta/N
+'trace_r'     P(x{r}, q{#}), P(r{y}), C(x{r}), . ->
+              P(x{r}, q{y}), P(r{y}), ., R()         @ eta*theta/N
 
 // 3. trace those who have had contact with flu case
 'trace_f'     P(q{#}), P(r{y}), C(x{f}) ->
@@ -176,6 +178,7 @@
 %obs: Ci    |C(x{i})|
 %obs: Cr    |C(x{r})|
 %obs: Cf    |C(x{f})|
+%obs: R     |R()|
 %obs: T     |T()|
 %obs: Tbusy |T(u[_])|
 
