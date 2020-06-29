@@ -1,11 +1,11 @@
-%var: beta  0.00005 // probability of infection from a bite
-%var: bprime 0.0025 // probability of vector becoming infectious
-%var: alpha 0.2     // progression from exposed to infectious
-%var: gamma 0.1429  // progression from infectious to removed
-%var: kappa 0.0714  // bites per day per mosquito
-%var: kb    0.1429  // birth rate slightly slower than
-%var: kd    0.1429  // death rate
-%var: water 1       // amount of the breeding habitat available
+%var: beta   0.036   // probability of infection from a bite
+%var: bprime 1       // probability of vector becoming infectious
+%var: alpha  0.2     // progression from exposed to infectious
+%var: gamma  0.1429  // progression from infectious to removed
+%var: kappa  1.0     // bites per day per mosquito
+%var: kb     0.1429  // birth rate slightly slower than
+%var: kd     0.1429  // death rate
+%var: water  1       // amount of the breeding habitat available
 
 // individuals simply have disease progression states
 %agent: P(x{s e i r})
@@ -18,8 +18,8 @@
 'birth'           V(), . -> V(), V(x{s}) @ water * kb
 'death'           V()    -> .            @ kd
 
-'biting'          V(x{s/i}), P(x{i}) @ bprime * kappa * N / (N + M)
-'infection'       P(x{s/e}), V(x{i}) @ beta * kappa * M / (N + M)
+'biting'          V(x{s/i}), P(x{i}) @ bprime * kappa / M
+'infection'       P(x{s/e}), V(x{i}) @ beta * kappa / N
 
 %obs: S     |P(x{s})|
 %obs: E     |P(x{e})|
